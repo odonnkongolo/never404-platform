@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: market-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "traefik" # Uses K3s's built-in routing engine
+spec:
+  rules:
+  - host: never404.co.uk
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: market-frontend-service
+            port:
+              number: 80
