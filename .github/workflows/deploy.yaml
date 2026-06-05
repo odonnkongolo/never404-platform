@@ -1,4 +1,4 @@
-# Last deployed: 2026-06-05 - updated kubeconfig to new server IP 108.129.142.70
+# Last deployed: 2026-06-05 - Triggering deployment with regenerated TLS certificates
 name: "Never404 GitOps Deployment"
 
 on:
