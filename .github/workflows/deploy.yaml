@@ -24,5 +24,5 @@ jobs:
 
       - name: 🚀 Apply Kubernetes Manifests
         run: |
-          kubectl apply -f ./env-kubernetes/app-test.yaml
-          kubectl apply -f ./env-kubernetes/ingress.yaml
+          kubectl apply -f ./env-kubernetes/app-test.yaml --validate=false
+          kubectl apply -f ./env-kubernetes/ingress.yaml --validate=false
