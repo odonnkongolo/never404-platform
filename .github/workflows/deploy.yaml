@@ -23,7 +23,14 @@ jobs:
           echo "${{ secrets.NEVER404_KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      - name: 🛡️ Install Cert-Manager
+        run: |
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.5/cert-manager.yaml --validate=false
+          # Wait 60 seconds for the cert-manager robots to boot up
+          sleep 60 
+
       - name: 🚀 Apply Kubernetes Manifests
         run: |
+          kubectl apply -f ./env-kubernetes/issuer.yaml --validate=false
           kubectl apply -f ./env-kubernetes/app-test.yaml --validate=false
           kubectl apply -f ./env-kubernetes/ingress.yaml --validate=false

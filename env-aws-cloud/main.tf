@@ -65,6 +65,15 @@ resource "aws_security_group" "never404_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  # Allow ICMP for Path MTU Discovery (prevents TLS handshake timeouts)
+  ingress {
+    description = "ICMP for Ping and MTU Discovery"
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 # 3. Find the latest Ubuntu OS automatically

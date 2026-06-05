@@ -1,6 +1,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: letsencrypt-prod
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" 
   name: market-ingress
   namespace: default
   annotations:
@@ -17,3 +20,8 @@ spec:
             name: market-frontend-service
             port:
               number: 80
+
+  tls:
+  - hosts:
+    - never404.co.uk
+    secretName: never404-tls
