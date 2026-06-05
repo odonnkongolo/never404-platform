@@ -1,0 +1,28 @@
+name: "Never404 GitOps Deployment"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'env-kubernetes/**'
+      - '.github/workflows/**'
+
+jobs:
+  deploy-to-k3s:
+    name: "Deploy Kubernetes Manifests"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Setup Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.NEVER404_KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: 🚀 Apply Kubernetes Manifests
+        run: |
+          kubectl apply -f ./env-kubernetes/app-test.yaml
+          kubectl apply -f ./env-kubernetes/ingress.yaml
