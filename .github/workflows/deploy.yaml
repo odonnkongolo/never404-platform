@@ -1,3 +1,4 @@
+# Last deployed: 2026-06-05 - updated kubeconfig to new server IP 108.129.142.70
 name: "Never404 GitOps Deployment"
 
 on:
