@@ -1,14 +1,16 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: letsencrypt-prod
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod" 
   name: market-ingress
   namespace: default
   annotations:
-    kubernetes.io/ingress.class: "traefik" # Uses K3s's built-in routing engine
+    kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+  tls:
+  - hosts:
+    - never404.co.uk
+    secretName: never404-tls
   rules:
   - host: never404.co.uk
     http:
@@ -20,8 +22,3 @@ spec:
             name: market-frontend-service
             port:
               number: 80
-
-  tls:
-  - hosts:
-    - never404.co.uk
-    secretName: never404-tls
