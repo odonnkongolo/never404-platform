@@ -2,14 +2,15 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: market-ingress
-  namespace: default
   annotations:
-    kubernetes.io/ingress.class: "traefik"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+    traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   tls:
   - hosts:
     - never404.co.uk
+    - www.never404.co.uk
     secretName: never404-tls
   rules:
   - host: never404.co.uk
@@ -19,6 +20,16 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: market-frontend-service
+            name: market-tracker-svc  # <--- The Bridge is Fixed Here
+            port:
+              number: 80
+  - host: www.never404.co.uk
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: market-tracker-svc  # <--- And Here
             port:
               number: 80
