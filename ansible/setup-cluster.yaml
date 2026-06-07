@@ -24,13 +24,9 @@
       when: ansible_facts['swaptotal_mb'] == 0
 
     - name: Make swap permanent in /etc/fstab
-      ansible.posix.mount:
-        name: none
-        src: /swapfile
-        fstype: swap
-        opts: sw
-        passno: '0'
-        dump: '0'
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        line: '/swapfile none swap sw 0 0'
         state: present
 
     # --- 2. The MTU Network SRE Hotfix (Idempotent Shell) ---
@@ -54,7 +50,20 @@
       command: iptables -t mangle -A OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
       when: output_mtu_check.rc != 0
 
-    # --- 3. The Kubernetes Orchestrator ---
+    # --- 3. K3s Security Configuration ---
+    - name: Create K3s config directory
+      file:
+        path: /etc/rancher/k3s
+        state: directory
+        mode: '0755'
+
+    - name: Add Public IP to K3s TLS SAN
+      copy:
+        dest: /etc/rancher/k3s/config.yaml
+        content: |
+          tls-san:
+            - "{{ inventory_hostname }}"
+    # --- 4. The Kubernetes Orchestrator ---
     - name: Download and install K3s
       shell: curl -sfL https://get.k3s.io | sh -
       args:
