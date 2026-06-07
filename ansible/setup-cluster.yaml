@@ -32,9 +32,9 @@
         line: '/swapfile none swap sw 0 0'
         state: present
 
-    # --- 2. The MTU Network SRE Hotfix (Idempotent Shell) ---
+    # --- 2. The MTU Network SRE Hotfix (Idempotent) ---
     - name: Check if FORWARD MTU rule exists
-      ansible.builtin.shell: iptables -t mangle -C FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+      ansible.builtin.command: iptables -t mangle -C FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
       register: forward_mtu_check
       failed_when: false
       changed_when: false
@@ -45,7 +45,7 @@
       changed_when: forward_mtu_check.rc != 0
 
     - name: Check if OUTPUT MTU rule exists
-      ansible.builtin.shell: iptables -t mangle -C OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+      ansible.builtin.command: iptables -t mangle -C OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
       register: output_mtu_check
       failed_when: false
       changed_when: false
@@ -71,8 +71,14 @@
         mode: '0644'
 
     # --- 4. The Kubernetes Orchestrator ---
-    - name: Download and install K3s
-      ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -
+    - name: Download K3s install script
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: '0755'
+
+    - name: Install K3s
+      ansible.builtin.command: /tmp/k3s-install.sh
       args:
         creates: /usr/local/bin/k3s
       changed_when: false

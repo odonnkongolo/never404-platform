@@ -44,8 +44,7 @@ jobs:
         run: pip install ansible-lint
 
       - name: 🚨 Check Ansible Syntax
-        # This acts as the "Ruff" for Ansible. It catches bad YAML syntax.
-        run: ansible-lint ./ansible/setup-cluster.yaml || true # Set to true temporarily so strict linting doesn't block you while learning
+        run: ansible-lint ./ansible/setup-cluster.yaml
 
   # =========================================================
   # STAGE 3: INFRA CD (Server Configuration)
