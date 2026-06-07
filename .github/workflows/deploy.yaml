@@ -103,6 +103,14 @@ jobs:
           echo "${{ secrets.NEVER404_KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      - name: 🔑 Inject Image Pull Secret
+        run: |
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.CR_PAT }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: 🛡️ Install Cert-Manager CRDs
         run: |
           # Install Cert-Manager and all its CRDs from the official source
