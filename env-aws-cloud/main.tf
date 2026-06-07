@@ -92,8 +92,8 @@ resource "aws_instance" "never404_server" {
   user_data = <<-EOF
               #!/bin/bash
               
-              # --- 1. Create 2GB Swap File (Prevents API OOM Crashes) ---
-              fallocate -l 2G /swapfile
+              # --- 1. Bulletproof 2GB Swap File (Prevents API OOM Crashes) ---
+              dd if=/dev/zero of=/swapfile bs=1M count=2048
               chmod 600 /swapfile
               mkswap /swapfile
               swapon /swapfile
