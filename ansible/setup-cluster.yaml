@@ -1,0 +1,61 @@
+---
+- name: Provision never404.co.uk K3s Cluster
+  hosts: aws_servers
+  become: yes 
+
+  tasks:
+    # --- 1. The Bulletproof Swap Allocation ---
+    - name: Physically allocate 2GB for the swap file
+      command: dd if=/dev/zero of=/swapfile bs=1M count=2048
+      args:
+        creates: /swapfile 
+
+    - name: Set correct permissions on the swap file
+      file:
+        path: /swapfile
+        mode: '0600'
+
+    - name: Format the swap file
+      command: mkswap /swapfile
+      when: ansible_facts['swaptotal_mb'] == 0 
+
+    - name: Enable the swap file
+      command: swapon /swapfile
+      when: ansible_facts['swaptotal_mb'] == 0
+
+    - name: Make swap permanent in /etc/fstab
+      mount:
+        name: none
+        src: /swapfile
+        fstype: swap
+        opts: sw
+        passno: '0'
+        dump: '0'
+        state: present
+
+    # --- 2. The MTU Network SRE Hotfix (Idempotent Shell) ---
+    - name: Check if FORWARD MTU rule exists
+      shell: iptables -t mangle -C FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+      register: forward_mtu_check
+      failed_when: false
+      changed_when: false
+
+    - name: Fix MTU Packet Fragmentation (FORWARD)
+      command: iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+      when: forward_mtu_check.rc != 0
+
+    - name: Check if OUTPUT MTU rule exists
+      shell: iptables -t mangle -C OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+      register: output_mtu_check
+      failed_when: false
+      changed_when: false
+
+    - name: Fix MTU Packet Fragmentation (OUTPUT)
+      command: iptables -t mangle -A OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+      when: output_mtu_check.rc != 0
+
+    # --- 3. The Kubernetes Orchestrator ---
+    - name: Download and install K3s
+      shell: curl -sfL https://get.k3s.io | sh -
+      args:
+        creates: /usr/local/bin/k3s

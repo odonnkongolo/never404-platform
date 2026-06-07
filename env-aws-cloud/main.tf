@@ -88,28 +88,7 @@ resource "aws_instance" "never404_server" {
     volume_size = 20
     volume_type = "gp3"
   }
-
-  user_data = <<-EOF
-              #!/bin/bash
-              
-              # --- 1. Bulletproof 2GB Swap File (Prevents API OOM Crashes) ---
-              dd if=/dev/zero of=/swapfile bs=1M count=2048
-              chmod 600 /swapfile
-              mkswap /swapfile
-              swapon /swapfile
-              echo '/swapfile none swap sw 0 0' >> /etc/fstab
-
-              # --- 2. Fix MTU/Packet Fragmentation ---
-              iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-              iptables -t mangle -A OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-
-              # --- 3. Install the k3s Orchestrator ---
-              curl -sfL https://get.k3s.io | sh -
-              EOF
-
-  tags = {
-    Name = "Never404-Market-Tracker-Cluster"
-  }
+  
 }
 
 output "server_public_ip" {

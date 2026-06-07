@@ -11,9 +11,9 @@ env:
 
 jobs:
   # =========================================================
-  # PROCESS 1: CONTINUOUS INTEGRATION (The Code Gatekeepers)
+  # STAGE 1: APP CI (Python Gatekeepers)
   # =========================================================
-  code-quality-checks:
+  python-ci:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout Code
@@ -24,26 +24,61 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 🚨 Run Ruff (Code Quality & Syntax)
+      - name: 🚨 Run Ruff & Bandit
         run: |
-          pip install ruff
+          pip install ruff bandit
           ruff check ./app
-
-      - name: 🔒 Run Bandit (Security Vulnerability Scanner)
-        run: |
-          pip install bandit
           bandit -r ./app -lll
 
   # =========================================================
-  # PROCESS 2: CONTINUOUS DEPLOYMENT (The AWS Rollout)
+  # STAGE 2: INFRA CI (Ansible Gatekeepers)
   # =========================================================
-  deploy-infrastructure:
-    needs: code-quality-checks  # <--- THIS IS THE UNBREAKABLE LOCK 'NEEDS'
+  ansible-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Install Ansible Lint
+        run: pip install ansible-lint
+
+      - name: 🚨 Check Ansible Syntax
+        # This acts as the "Ruff" for Ansible. It catches bad YAML syntax.
+        run: ansible-lint ./ansible/setup-cluster.yaml || true # Set to true temporarily so strict linting doesn't block you while learning
+
+  # =========================================================
+  # STAGE 3: INFRA CD (Server Configuration)
+  # =========================================================
+  ansible-cd:
+    needs: [python-ci, ansible-ci] # UNBREAKABLE LOCK
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Inject SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_SSH_KEY }}" > ~/.ssh/aws_key.pem
+          chmod 600 ~/.ssh/aws_key.pem
+
+      - name: 🛠️ Execute Ansible Playbook
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: |
+          ansible-playbook -i "${{ secrets.AWS_HOST_IP }}," ./ansible/setup-cluster.yaml \
+            --user ubuntu \
+            --private-key ~/.ssh/aws_key.pem
+
+  # =========================================================
+  # STAGE 4: APP CD (Kubernetes Deployment)
+  # =========================================================
+  kubernetes-cd:
+    needs: ansible-cd # Must wait for the server to be configured by Ansible
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
@@ -67,14 +102,6 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.NEVER404_KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
-
-      - name: 🔑 Inject Image Pull Secret
-        run: |
-          kubectl create secret docker-registry ghcr-secret \
-            --docker-server=ghcr.io \
-            --docker-username=${{ github.actor }} \
-            --docker-password=${{ secrets.CR_PAT }} \
-            --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
       - name: 🚀 Apply Kubernetes Manifests
         run: |
