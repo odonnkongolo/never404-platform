@@ -6,7 +6,6 @@ terraform {
     }
   }
 
-  # --- TELL TERRAFORM TO USE THE CLOUD VAULT ---
   backend "s3" {
     bucket         = "exacq-tf-state-odon-2026"
     key            = "never404-platform/terraform.tfstate"
@@ -16,17 +15,14 @@ terraform {
   }
 }
 
-# 1. The Cloud Provider
 provider "aws" {
-  region = "eu-west-1" # Dublin (Closest to Belfast for lowest latency)
+  region = "eu-west-1"
 }
 
-# 2. The Cloud Firewall (Security Group)
 resource "aws_security_group" "never404_sg" {
   name        = "never404_platform_sg"
   description = "Allow Web, HTTPS, and SSH traffic"
 
-  # Allow standard web traffic (HTTP)
   ingress {
     from_port   = 80
     to_port     = 80
@@ -34,7 +30,6 @@ resource "aws_security_group" "never404_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow secure web traffic (HTTPS) - Crucial for our SSL padlock!
   ingress {
     from_port   = 443
     to_port     = 443
@@ -42,7 +37,6 @@ resource "aws_security_group" "never404_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow SSH traffic so we can debug
   ingress {
     from_port   = 22
     to_port     = 22
@@ -50,7 +44,6 @@ resource "aws_security_group" "never404_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow all outbound traffic (so the server can download packages)
   egress {
     from_port   = 0
     to_port     = 0
@@ -66,7 +59,6 @@ resource "aws_security_group" "never404_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow ICMP for Path MTU Discovery (prevents TLS handshake timeouts)
   ingress {
     description = "ICMP for Ping and MTU Discovery"
     from_port   = -1
@@ -76,10 +68,9 @@ resource "aws_security_group" "never404_sg" {
   }
 }
 
-# 3. Find the latest Ubuntu OS automatically
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"] # Official Canonical Ubuntu
+  owners      = ["099720109477"]
 
   filter {
     name   = "name"
@@ -87,27 +78,33 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# 4. The Virtual Server (100% Free Tier Eligible)
 resource "aws_instance" "never404_server" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.micro"
-  key_name               = "never404-key" # <---  Added KEY PAIR NAME
+  instance_type          = "t3.small" # MUST be t3.small for K3s memory requirements
+  key_name               = "never404-key"
   vpc_security_group_ids = [aws_security_group.never404_sg.id]
 
-  # ---> CLAIM 20GB OF FREE TIER STORAGE <---
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
   }
 
-  # 5. The Bootstrap Automation (Runs once on boot)
   user_data = <<-EOF
               #!/bin/bash
-
-              # --- 1. Install the k3s Orchestrator ---
-              curl -sfL https://get.k3s.io | sh -
-              sleep 15 # Wait for cluster to wake up
               
+              # --- 1. Create 2GB Swap File (Prevents API OOM Crashes) ---
+              fallocate -l 2G /swapfile
+              chmod 600 /swapfile
+              mkswap /swapfile
+              swapon /swapfile
+              echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
+              # --- 2. Fix MTU/Packet Fragmentation ---
+              iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+              iptables -t mangle -A OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
+              # --- 3. Install the k3s Orchestrator ---
+              curl -sfL https://get.k3s.io | sh -
               EOF
 
   tags = {
@@ -115,7 +112,6 @@ resource "aws_instance" "never404_server" {
   }
 }
 
-# 6. Output the Public IP address to your terminal.
 output "server_public_ip" {
   value       = aws_instance.never404_server.public_ip
   description = "Point your Hostinger A Record to this IP address!"
