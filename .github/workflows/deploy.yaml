@@ -18,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
 
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
 
       - name: ⚙️ Install Ansible Lint
         run: pip install ansible-lint
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
 
       - name: 🔑 Inject SSH Key
         run: |
@@ -82,7 +82,7 @@ jobs:
       packages: write
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
 
       - name: 🐳 Log in to the Container Registry
         uses: docker/login-action@v3
@@ -103,6 +103,15 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.NEVER404_KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
+
+      - name: 🛡️ Install Cert-Manager CRDs
+        run: |
+          # Install Cert-Manager and all its CRDs from the official source
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml
+          # Block until the webhook is fully online — prevents the "ClusterIssuer not found" race condition
+          kubectl wait --for=condition=Available deployment/cert-manager-webhook -n cert-manager --timeout=120s
+          # Small buffer to ensure the webhook is fully registered with the API server
+          sleep 10
 
       - name: 🚀 Apply Kubernetes Manifests
         run: |
