@@ -38,7 +38,7 @@ jobs:
   # PROCESS 2: CONTINUOUS DEPLOYMENT (The AWS Rollout)
   # =========================================================
   deploy-infrastructure:
-    needs: code-quality-checks  # <--- THIS IS THE UNBREAKABLE LOCK
+    needs: code-quality-checks  # <--- THIS IS THE UNBREAKABLE LOCK 'NEEDS'
     runs-on: ubuntu-latest
     permissions:
       contents: read
