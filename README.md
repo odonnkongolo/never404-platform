@@ -1,5 +1,5 @@
-🚀 never404-platform: Automated GitOps & Observability Cluster
-📌 Overview
+# 🚀 never404-platform: Automated GitOps & Observability Cluster
+# 📌 Overview
 This repository contains the Infrastructure as Code (IaC), Continuous Integration/Continuous Deployment (CI/CD) pipelines, and application manifests for the never404.co.uk platform.
 
 The project is built around a "Shift-Left" security philosophy and an immutable GitOps architecture, deploying a containerized Python application (Market Tracker) to an AWS Kubernetes cluster with fully automated TLS routing and enterprise observability.
@@ -10,7 +10,7 @@ Main Application: https://never404.co.uk (Streamlit Python App)
 
 SRE Cockpit: https://grafana.never404.co.uk (Prometheus/Grafana)
 
-🏗️ Architecture Stack
+# 🏗️ Architecture Stack
 Cloud Provider: AWS (EC2 t3.small / VPC / Security Groups)
 
 Infrastructure as Code (IaC): Terraform
@@ -27,7 +27,7 @@ Observability: kube-prometheus-stack (Helm)
 
 Application: Python 3.11 / Streamlit
 
-⚙️ CI/CD Pipeline Design
+# ⚙️ CI/CD Pipeline Design
 The GitHub Actions pipeline .github/workflows/deploy.yaml is intentionally decoupled into two distinct jobs to isolate the blast radius of code failures from live infrastructure:
 
 Job 1: Continuous Integration (CI Gatekeepers)
@@ -50,7 +50,7 @@ Injects highly-scoped temporary Kubeconfig credentials.
 
 Executes a GitOps pull, applying the latest YAML manifests to the live K3s cluster.
 
-🛠️ Infrastructure & SRE Runbook
+# 🛠️ Infrastructure & SRE Runbook
 The Bootstrap (user_data)
 The AWS cluster is provisioned via Terraform. The main.tf file contains a highly customized user_data bootstrap script engineered to bypass common cloud-native bottlenecks:
 
@@ -65,7 +65,7 @@ Cert-Manager automatically interfaces with Let's Encrypt to provision, rotate, a
 
 Internal routing to Grafana is locked behind a strict HTTPS-only entrypoint annotation.
 
-🚨 Known Resource Constraints
+# 🚨 Known Resource Constraints
 The t3.small instance operates with 2GB of active RAM. Running a full enterprise observability suite alongside an application and an ingress controller maxes out system memory, occasionally triggering the Linux OOM Killer (Out Of Memory).
 
 Emergency Amputation Playbook (To restore main app routing):
