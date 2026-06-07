@@ -24,7 +24,7 @@
       when: ansible_facts['swaptotal_mb'] == 0
 
     - name: Make swap permanent in /etc/fstab
-      mount:
+      ansible.posix.mount:
         name: none
         src: /swapfile
         fstype: swap
