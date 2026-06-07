@@ -46,7 +46,7 @@ jobs:
             --docker-server=ghcr.io \
             --docker-username=${{ github.actor }} \
             --docker-password=${{ secrets.CR_PAT }} \
-            --dry-run=client -o yaml | kubectl apply -f -
+            --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
       - name: 🛡️ Verify Cert-Manager
         run: |
