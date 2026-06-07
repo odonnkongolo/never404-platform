@@ -10,17 +10,15 @@ env:
   IMAGE_NAME: ${{ github.repository }}-app
 
 jobs:
-  deploy:
+  # =========================================================
+  # PROCESS 1: CONTINUOUS INTEGRATION (The Code Gatekeepers)
+  # =========================================================
+  code-quality-checks:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-        # --- NEW CI/CD GATEKEEPER STEPS START HERE ---
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
@@ -29,15 +27,26 @@ jobs:
       - name: 🚨 Run Ruff (Code Quality & Syntax)
         run: |
           pip install ruff
-          # This scans your app folder. It will fail the pipeline if it finds critical errors.
           ruff check ./app
 
       - name: 🔒 Run Bandit (Security Vulnerability Scanner)
         run: |
           pip install bandit
-          # Scans for security flaws. We use -lll to only fail on HIGH severity issues for now.
           bandit -r ./app -lll
-      # --- NEW CI/CD GATEKEEPER STEPS END HERE ---
+
+  # =========================================================
+  # PROCESS 2: CONTINUOUS DEPLOYMENT (The AWS Rollout)
+  # =========================================================
+  deploy-infrastructure:
+    needs: code-quality-checks  # <--- THIS IS THE UNBREAKABLE LOCK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
 
       - name: 🐳 Log in to the Container Registry
         uses: docker/login-action@v3
