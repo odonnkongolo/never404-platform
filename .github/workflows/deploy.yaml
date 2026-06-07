@@ -118,4 +118,5 @@ jobs:
           kubectl apply -f ./env-kubernetes/issuer.yaml --validate=false
           kubectl apply -f ./env-kubernetes/app-prod.yaml --validate=false
           kubectl apply -f ./env-kubernetes/ingress.yaml --validate=false
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -f ./env-kubernetes/ingress-grafana.yaml --validate=false
