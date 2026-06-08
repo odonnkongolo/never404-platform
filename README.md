@@ -52,6 +52,7 @@ The GitHub Actions pipeline `.github/workflows/deploy.yaml` uses a strict depend
 - Executes a GitOps pull, applying the latest YAML manifests to the live K3s cluster.
 
 ---
+<img width="2990" height="1024" alt="image" src="https://github.com/user-attachments/assets/b01eeef6-4c9f-4003-b747-a402eb31f792" />
 
 ## 🛠️ Infrastructure & SRE Runbook
 
