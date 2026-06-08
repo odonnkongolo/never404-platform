@@ -28,6 +28,7 @@ The project is built around a "Shift-Left" security philosophy and an immutable 
 | Application | Python 3.11 / Streamlit |
 
 ---
+<img width="2572" height="1724" alt="image" src="https://github.com/user-attachments/assets/71b45736-fe9f-4e47-b2a3-04cf4a35a73a" />
 
 ## ⚙️ CI/CD Pipeline Design
 
